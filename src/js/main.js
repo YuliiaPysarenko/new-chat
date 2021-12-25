@@ -15,26 +15,16 @@ const rootRef = document.querySelector("#root");
 
 let user = true;
 
-// function start() {
-//     if (user) {
-//         rootRef.innerHTML = createChat();
-//         userSignOut();
-//     } else {
-//         rootRef.innerHTML = createButton();
-//         onClickBtn();
-//     }
-// }
-
-// start();
-
 onAuthStateChanged(auth, (userFirebase) => {
     if (userFirebase) {
-        const {photoURL, uid} = userFirebase;
+        console.log('userFirebase', userFirebase);
+        const {photoURL, uid, displayName} = userFirebase;
         user = {
             photoURL,
-            uid
+            uid,
+            displayName
         }
-        console.log(user);
+        console.log('user', user);
         rootRef.innerHTML = createChat();
         userSignOut();
         createMsg();
@@ -42,15 +32,6 @@ onAuthStateChanged(auth, (userFirebase) => {
         rootRef.innerHTML = createButton();
         onClickBtn();
     }
-    // if (user) {
-    //   // User is signed in, see docs for a list of available properties
-    //   // https://firebase.google.com/docs/reference/js/firebase.User
-    //   const uid = user.uid;
-    //   // ...
-    // } else {
-    //   // User is signed out
-    //   // ...
-    // }
   });
 
   const date = new Date();
@@ -70,16 +51,17 @@ function sendMsg(value) {
 
 const starCountRef = ref(db, 'chat/');
 onValue(starCountRef, (snapshot) => {
-  const data = snapshot.val();
-  const markup = createTextMsg(Object.values(data), user.uid);
-  document.querySelector(".messages").innerHTML = markup;
+    const data = snapshot.val();
+    console.log('data', data);
+    const markup = createTextMsg(Object.values(data), user.uid);
+    document.querySelector(".messages").innerHTML = markup;
 });
 
 function createMsg() {
     const formRef = document.querySelector('.msg-form');
     formRef.addEventListener('submit', (e) => {
         e.preventDefault();
-        const text = e.target.elements.msg.value.trim();
+        const text = e.target.elements.msg.value;
         if(!text) {
             return
         }
@@ -100,6 +82,9 @@ function onClickBtn() {
           const token = credential.accessToken;
           // The signed-in user info.
           const user = result.user;
+        //   onAuthStateChanged();
+        //   rootRef.innerHTML = createChat();
+        //   createMsg();
           console.log(user);
           // ...
         }).catch((error) => {

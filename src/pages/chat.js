@@ -1,10 +1,9 @@
 export function createChat() {
     return `
-    <button type="button" class="msg-btn btn-sign-out">Sign out</button>
     <div class="chat">
     <div class="chat-name-container">
-        <a href="#login_form" id="login_pop">Log In</a>
         <h1 class="chat-name">7Pro</h1>
+        <button type="button" class="msg-btn btn-sign-out">Sign out</button>
     </div>
     <div id="chat-window" class="chat-window">
 
@@ -32,12 +31,12 @@ export function createChat() {
 }
 
 export function createTextMsg(array, id) {
-    const markup = array.map(({photoURL, uid, message}) => {
+    const markup = array.map(({photoURL, uid, message, displayName}) => {
         const classElement = id === uid ? "msg my" : "msg";
         return `<li class="${classElement}">
-        <img class="img" width="50" height="50" src="${photoURL}">
+        <img class="img" width="40" height="40" src="${photoURL}">
             <span class="msg-span">
-                <i class="name">Ipsum: </i>${message} 
+                <i class="name">${displayName}: </i>${message} 
             </span>
         </li>`
     }).join('');
