@@ -8,3 +8,5 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: "74485839737",
   appId: "1:74485839737:web:aa9f2ceb83c9d8a943a1a8"
 };
+
+export const PATH = 'chat/';

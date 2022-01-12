@@ -1,110 +1,121 @@
+'use strict'
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
-import { FIREBASE_CONFIG } from "../js/const.js";
+import { FIREBASE_CONFIG, PATH } from "../js/const.js";
 
-import {createButton} from '../pages/login.js';
-import {createChat, createTextMsg} from '../pages/chat.js';
+import { createButton } from '../pages/login.js';
+import { createChat, createTextMsg } from '../pages/chat.js';
 
 const app = initializeApp(FIREBASE_CONFIG);
 const provider = new GoogleAuthProvider();
 const auth = getAuth();
 const db = getDatabase();
+const starCountRef = ref(db, PATH);
 
-const rootRef = document.querySelector("#root");
+const containerRef = document.querySelector("#container");
+const formRef = document.querySelector("#msg-form");
+const editorRef = document.querySelector('[data-tiny-editor]');
+
+formRef.style.display = 'none';
 
 let user = true;
+containerRef.innerHTML = createChat();
 
 onAuthStateChanged(auth, (userFirebase) => {
+  const chatRef = document.querySelector('.chat');
     if (userFirebase) {
-        console.log('userFirebase', userFirebase);
-        const {photoURL, uid, displayName} = userFirebase;
-        user = {
-            photoURL,
-            uid,
-            displayName
-        }
-        console.log('user', user);
-        rootRef.innerHTML = createChat();
-        userSignOut();
-        createMsg();
+
+      const {photoURL, uid, displayName} = userFirebase;
+      user = {
+          photoURL,
+          uid,
+          displayName
+      };      
+      insertChat();      
+      formRef.style.display = 'flex';
+
     } else {
-        rootRef.innerHTML = createButton();
-        onClickBtn();
+      containerRef.innerHTML = createButton();
+      formRef.style.display = 'none';
+      onClickBtn();
     }
   });
 
-  const date = new Date();
+function insertChat() {
+  containerRef.innerHTML = createChat();
+  userSignOut();
+  createMsg();
+
+  onValue(starCountRef, (snapshot) => {
+    const data = snapshot.val();
+    const markup = createTextMsg(Object.values(data), user.uid);
+    document.querySelector(".messages").innerHTML = markup;
+  });
+}
+
+function createMsg() {
+  let text = "";
+  editorRef.addEventListener('input', (e) => {text = e.target.innerHTML;});
+
+  formRef.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if(!text) {
+      return
+    }
+    sendMsg(text);
+    const editorRef = document.querySelector('[data-tiny-editor]');
+    editorRef.textContent ="";
+  });
+}
+
+const date = new Date();
 
 function getTime() {
-    return `${date.getHours()}:${date.getMinutes()}`
+  return `${date.getHours()}:${date.getMinutes()}`
 }
 
 function sendMsg(value) {
     const time = Date.now();
-  set(ref(db, 'chat/' + time), {
+  set(ref(db, PATH + time), {
     message: value,
     time: getTime(),
     ...user,
   });
 }
 
-const starCountRef = ref(db, 'chat/');
-onValue(starCountRef, (snapshot) => {
-    const data = snapshot.val();
-    console.log('data', data);
-    const markup = createTextMsg(Object.values(data), user.uid);
-    document.querySelector(".messages").innerHTML = markup;
-});
-
-function createMsg() {
-    const formRef = document.querySelector('.msg-form');
-    formRef.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const text = e.target.elements.msg.value;
-        if(!text) {
-            return
-        }
-        sendMsg(text);
-        e.target.reset();
-    })
-}
-
 function onClickBtn() {
-    console.log(1);
-    const loginBtnRef = document.querySelector(".js-msg-btn");
-    loginBtnRef.addEventListener("click", () => {
-        
-        signInWithPopup(auth, provider)
-        .then((result) => {
-          // This gives you a Google Access Token. You can use it to access the Google API.
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          const token = credential.accessToken;
-          // The signed-in user info.
-          const user = result.user;
-        //   onAuthStateChanged();
-        //   rootRef.innerHTML = createChat();
-        //   createMsg();
-          console.log(user);
-          // ...
-        }).catch((error) => {
-          // Handle Errors here.
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          // The email of the user's account used.
-          const email = error.email;
-          // The AuthCredential type that was used.
-          const credential = GoogleAuthProvider.credentialFromError(error);
-          // ...
-        });})
+  const loginBtnRef = document.querySelector(".js-msg-btn");
+  loginBtnRef.addEventListener("click", () => {        
+    signInWithPopup(auth, provider)
+    .then((result) => {
+      // This gives you a Google Access Token. You can use it to access the Google API.
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      // The signed-in user info.
+      const user = result.user;
+      
+      insertChat();
+      // ...
+    }).catch((error) => {
+      // Handle Errors here.
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      // The email of the user's account used.
+      const email = error.email;
+      // The AuthCredential type that was used.
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      // ...
+    });})
 }
 
 function userSignOut() {
     const loginBtnRef = document.querySelector(".btn-sign-out");
+    
     loginBtnRef.addEventListener("click", () => {
       signOut(auth).then(() => {
+        // onAuthStateChanged();
         // Sign-out successful.
-        console.log(2);
       }).catch((error) => {
         // An error happened.
       });
